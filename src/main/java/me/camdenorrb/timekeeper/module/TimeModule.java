@@ -1,17 +1,18 @@
 package me.camdenorrb.timekeeper.module;
 
-import com.sxtanna.database.Kuery;
-import com.sxtanna.database.config.KueryConfig;
+import com.sxtanna.database.task.builder.Create;
+import com.sxtanna.database.task.builder.Delete;
+import com.sxtanna.database.task.builder.Select;
+import com.sxtanna.database.type.base.SqlObject;
 import me.camdenorrb.timekeeper.TimeKeeper;
 import me.camdenorrb.timekeeper.module.base.ModuleBase;
-import net.md_5.bungee.api.event.LoginEvent;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
+import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.event.ServerConnectEvent;
 import net.md_5.bungee.api.event.ServerDisconnectEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -24,18 +25,15 @@ public final class TimeModule implements ModuleBase, Listener {
 
 	private boolean isEnabled = false;
 
-	private final File timeFolder;
-
 	private final TimeKeeper plugin;
 
-	// UUID -> (Interval -> Time in hours)
-	//private final Map<UUID, Map<Interval, Long>> serverTime = new HashMap<>();
-	//private final Map<UUID, Map<Interval, Long>> bungeeTime = new HashMap<>();
+	// UUID -> (Server Name -> Join Time in milliseconds)
+	// "Bungee" will be the server name for when they join Bungee
+	private final Map<UUID, Map<String, Long>> serverJoinTime = new HashMap<>();
 
 
 	public TimeModule(final TimeKeeper plugin) {
 		this.plugin = plugin;
-		this.timeFolder = new File(plugin.getDataFolder(), "PlayTime");
 	}
 
 
@@ -43,14 +41,6 @@ public final class TimeModule implements ModuleBase, Listener {
 	public void enable() {
 
 		assert !isEnabled;
-
-		final File mysqlConfigFile = new File(plugin.getDataFolder(), "mysqlConfig.json");
-
-		if (!mysqlConfigFile.exists()) {
-			mysqlConfigFile
-		}
-
-		KueryConfig.Companion.getDEFAULT()
 
 		loadTimeData();
 		plugin.getProxy().getPluginManager().registerListener(plugin, this);
@@ -69,29 +59,59 @@ public final class TimeModule implements ModuleBase, Listener {
 		isEnabled = false;
 	}
 
+
+
 	@Override
 	public boolean isEnabled() {
 		return isEnabled;
 	}
 
-
 	@EventHandler
-	protected final void onBungeeJoin(final LoginEvent event) {
-		event.
+	protected final void onBungeeJoin(final PostLoginEvent event) {
+
+		final UUID uuid = event.getPlayer().getUniqueId();
+
+		serverJoinTime
+			.computeIfAbsent(uuid, (it) -> new HashMap<>())
+			.put("Bungee", System.currentTimeMillis());
 	}
 
 	@EventHandler
 	protected final void onBungeeQuit(final PlayerDisconnectEvent event) {
 
+		final long joinTime = serverJoinTime.get(event.getPlayer().getUniqueId()).get("Bungee");
+
+		plugin.getKuery().execute((it) -> {
+			Delete
+			Select.from(Session.class).equals("uuid", )
+		});
 	}
 
 	@EventHandler
 	protected final void onServerJoin(final ServerConnectEvent event) {
 
+		final UUID uuid = event.getPlayer().getUniqueId();
+
+		serverJoinTime
+			.computeIfAbsent(uuid, (it) -> new HashMap<>())
+			.put(event.getTarget().getName(), System.currentTimeMillis());
 	}
 
 	@EventHandler
 	protected final void onServerQuit(final ServerDisconnectEvent event) {
+		event.getPlayer();
+	}
+
+
+	private void loadTimeData() {
+
+		plugin.getKuery().execute((it) -> {
+			it.execute(Create.from(Session.class));
+		});
+
+	}
+
+	private void saveTimeData() {
 
 	}
 
@@ -101,12 +121,12 @@ public final class TimeModule implements ModuleBase, Listener {
 		DAY, WEEK, MONTH, OTHER
 	}
 
-	public class Session {
+	public final class Session implements SqlObject {
 
 		private final long joinTime, quitTime;
 
 
-		public Session(long joinTime, long quitTime) {
+		public Session(final long joinTime, final long quitTime) {
 			this.joinTime = joinTime;
 			this.quitTime = quitTime;
 		}
@@ -119,11 +139,6 @@ public final class TimeModule implements ModuleBase, Listener {
 		public long getQuitTime() {
 			return quitTime;
 		}
-
-	}
-
-
-	private void loadTimeData() {
 
 	}
 
