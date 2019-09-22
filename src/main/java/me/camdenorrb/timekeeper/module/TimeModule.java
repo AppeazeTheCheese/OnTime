@@ -13,9 +13,11 @@ import net.md_5.bungee.api.event.ServerDisconnectEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
+import java.time.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -54,6 +56,7 @@ public final class TimeModule implements ModuleBase, Listener {
 		assert isEnabled;
 
 		saveTimeData();
+		serverJoinTime.clear();
 		plugin.getProxy().getPluginManager().unregisterListener(this);
 
 		isEnabled = false;
@@ -65,6 +68,7 @@ public final class TimeModule implements ModuleBase, Listener {
 	public boolean isEnabled() {
 		return isEnabled;
 	}
+
 
 	@EventHandler
 	protected final void onBungeeJoin(final PostLoginEvent event) {
@@ -79,12 +83,12 @@ public final class TimeModule implements ModuleBase, Listener {
 	@EventHandler
 	protected final void onBungeeQuit(final PlayerDisconnectEvent event) {
 
+		final UUID uuid = event.getPlayer().getUniqueId();
 		final long joinTime = serverJoinTime.get(event.getPlayer().getUniqueId()).get("Bungee");
 
-		plugin.getKuery().execute((it) -> {
-			Insert.into(Session.class).
-			Select.from(Session.class).equals("uuid", )
-		});
+		plugin.getKuery().execute((it) ->
+			it.execute(Insert.into(Session.class), new Session(uuid, "Bungee", joinTime, System.currentTimeMillis()))
+		);
 	}
 
 	@EventHandler
@@ -99,38 +103,95 @@ public final class TimeModule implements ModuleBase, Listener {
 
 	@EventHandler
 	protected final void onServerQuit(final ServerDisconnectEvent event) {
-		event.getPlayer();
+
+		final UUID uuid = event.getPlayer().getUniqueId();
+		final String serverName = event.getTarget().getName();
+		final long joinTime = serverJoinTime.get(event.getPlayer().getUniqueId()).get("Bungee");
+
+		plugin.getKuery().execute((it) ->
+			it.execute(Insert.into(Session.class), new Session(uuid, serverName, joinTime, System.currentTimeMillis()))
+		);
+	}
+
+	public long getPlayTime(final UUID targetUUID, final Interval interval) {
+
+		final AtomicLong onlineTime = new AtomicLong();
+
+		plugin.getKuery().execute((task) -> {
+
+			final long searchTime = System.currentTimeMillis() - interval.getMilli();
+
+			task.execute(Select.from(Session.class).equals("playerUUID", targetUUID).greater("quitTime", searchTime, true), session ->
+				onlineTime.addAndGet(session.quitTime - session.joinTime)
+			);
+
+		});
+
+		return onlineTime.get();
 	}
 
 
 	private void loadTimeData() {
-
-		plugin.getKuery().execute((it) -> {
-			it.execute(Create.from(Session.class));
-		});
-
+		plugin.getKuery().execute((it) -> it.execute(Create.from(Session.class)));
 	}
 
 	private void saveTimeData() {
-
+		plugin.getKuery().execute((task) ->
+			serverJoinTime.forEach((uuid, entries) ->
+				entries.forEach((serverName, joinTime) ->
+					task.execute(Insert.into(Session.class), new Session(uuid, serverName, joinTime, System.currentTimeMillis()))
+				)
+			)
+		);
 	}
 
 
 	// All time = All this combined
 	public enum Interval {
-		DAY, WEEK, MONTH, OTHER
+
+		SECOND(1000),
+		MINUTE(SECOND.milli * 60),
+		HOUR(MINUTE.milli * 60),
+		DAY(HOUR.milli * 24),
+		WEEK(DAY.milli * 7),
+		Month(DAY.milli * YearMonth.now().lengthOfMonth()),
+		ALL(Long.MAX_VALUE);
+
+
+		private final long milli;
+
+		Interval(final long milli) {
+			this.milli = milli;
+		}
+
+		public long getMilli() {
+			return milli;
+		}
+
 	}
 
 	public final class Session implements SqlObject {
 
+		private final UUID playerUUID;
+		private final String serverName;
 		private final long joinTime, quitTime;
 
 
-		public Session(final long joinTime, final long quitTime) {
+		public Session(final UUID playerUUID, final String serverName, final long joinTime, final long quitTime) {
+			this.playerUUID = playerUUID;
+			this.serverName = serverName;
 			this.joinTime = joinTime;
 			this.quitTime = quitTime;
 		}
 
+
+		public UUID getPlayerUUID() {
+			return playerUUID;
+		}
+
+		public String getServerName() {
+			return serverName;
+		}
 
 		public long getJoinTime() {
 			return joinTime;
