@@ -1,7 +1,7 @@
 package me.camdenorrb.timekeeper.module;
 
 import com.sxtanna.database.task.builder.Create;
-import com.sxtanna.database.task.builder.Delete;
+import com.sxtanna.database.task.builder.Insert;
 import com.sxtanna.database.task.builder.Select;
 import com.sxtanna.database.type.base.SqlObject;
 import me.camdenorrb.timekeeper.TimeKeeper;
@@ -82,7 +82,7 @@ public final class TimeModule implements ModuleBase, Listener {
 		final long joinTime = serverJoinTime.get(event.getPlayer().getUniqueId()).get("Bungee");
 
 		plugin.getKuery().execute((it) -> {
-			Delete
+			Insert.into(Session.class).
 			Select.from(Session.class).equals("uuid", )
 		});
 	}
