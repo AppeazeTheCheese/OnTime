@@ -12,12 +12,13 @@ import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
 import java.sql.PreparedStatement;
-import java.time.YearMonth;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.time.*;
+import java.time.temporal.ChronoField;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 
 /**
@@ -34,7 +35,8 @@ public final class TimeModule implements ModuleBase, Listener {
 	private final Map<UUID, Map<String, Long>> serverJoinTime = new HashMap<>();
 
 
-	private static final String CREATE_SQL = "CREATE TABLE IF NOT EXISTS Session (playerUUID CHAR(36) NOT NULL, serverName VARCHAR(255) NOT NULL, joinTime BIGINT(100) NOT NULL, quitTime BIGINT(100) NOT NULL)";
+	private static final String CREATE_SQL = "CREATE TABLE IF NOT EXISTS TimeKeeperPlayers(playerUUID CHAR(36) NOT NULL, playerID INT NOT NULL, serverID INT NOT NULL, serverName VARCHAR(255) NOT NULL, joinTime BIGINT(100) NOT NULL, quitTime BIGINT(100) NOT NULL, FOREIGN KEY (serverID))";
+	private static final String CREATE_SQL = "CREATE TABLE IF NOT EXISTS TimeKeeperSessions(playerUUID CHAR(36) NOT NULL, playerID INT NOT NULL, serverID INT NOT NULL, serverName VARCHAR(255) NOT NULL, joinTime BIGINT(100) NOT NULL, quitTime BIGINT(100) NOT NULL, FOREIGN KEY (serverID))";
 	private static final String INSERT_SQL = "INSERT INTO Session (playerUUID, serverName, joinTime, quitTime) VALUES (?, ?, ?, ?)";
 	private static final String SELECT_SQL = "SELECT joinTime, quitTime FROM Session WHERE playerUUID=? AND serverName=? AND quitTime > ?";
 
@@ -131,11 +133,11 @@ public final class TimeModule implements ModuleBase, Listener {
 	}
 
 	// Should call from another thread
-	public long getPlayTime(final UUID targetUUID, final String serverName, final Interval interval) {
+	public long getPlayTime(final UUID targetUUID, final String serverName, final Timespan timespan) {
 
 		final AtomicLong onlineTime = new AtomicLong();
 
-		final long searchTime = System.currentTimeMillis() - interval.getMilli();
+		final long searchTime = timespan.getStartEpoch();
 
 		SqlUtils.useStatement(plugin.getHikariDataSource(), SELECT_SQL, (statement) -> {
 
@@ -172,25 +174,41 @@ public final class TimeModule implements ModuleBase, Listener {
 
 
 	// All time = All this combined
-	public enum Interval {
+	public enum Timespan {
 
-		SECOND(1000),
-		MINUTE(SECOND.milli * 60),
-		HOUR(MINUTE.milli * 60),
-		DAY(HOUR.milli * 24),
-		WEEK(DAY.milli * 7),
-		MONTH(DAY.milli * YearMonth.now().lengthOfMonth()),
-		ALL(Long.MAX_VALUE);
+		TODAY(() -> {
+			return LocalDate.now().atStartOfDay().getLong(ChronoField.MICRO_OF_DAY);
+		}),
+
+		THIS_WEEK(() -> {
+
+			final LocalDate localDate = LocalDate.now();
+			final LocalDateTime today = localDate.atStartOfDay();
+
+			return today.minusDays(localDate.getDayOfWeek().getValue() - 1).getLong(ChronoField.MICRO_OF_DAY);
+		}),
+
+		THIS_MONTH(() -> {
+
+			final LocalDate localDate = LocalDate.now();
+			final LocalDateTime today = localDate.atStartOfDay();
+
+			return today.minusDays(localDate.getDayOfMonth() - 1).getLong(ChronoField.MICRO_OF_DAY);
+		}),
+
+		ALL(System::currentTimeMillis);
 
 
-		private final long milli;
+		private final Supplier<Long> milli;
 
-		Interval(final long milli) {
+
+		Timespan(final Supplier<Long> milli) {
 			this.milli = milli;
 		}
 
-		public long getMilli() {
-			return milli;
+
+		public long getStartEpoch() {
+			return System.currentTimeMillis() - milli.get();
 		}
 
 	}

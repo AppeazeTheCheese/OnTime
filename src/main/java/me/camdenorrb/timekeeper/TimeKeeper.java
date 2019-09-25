@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import me.camdenorrb.timekeeper.commands.OnTimeCmd;
-import me.camdenorrb.timekeeper.config.MySqlConfig;
+import me.camdenorrb.timekeeper.db.sql.impl.SqlConfig;
 import me.camdenorrb.timekeeper.module.NameModule;
 import me.camdenorrb.timekeeper.module.TimeModule;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -32,11 +32,11 @@ public final class TimeKeeper extends Plugin {
 	@Override
 	public void onLoad() {
 
-		final MySqlConfig mysqlConfig = MySqlConfig.fromOrMake(new File(getDataFolder(), "mysqlConfig.json"), gson);
+		final SqlConfig mysqlConfig = SqlConfig.fromOrMake(new File(getDataFolder(), "mysqlConfig.json"), gson);
 
 		final HikariConfig hikariConfig = new HikariConfig();
 
-		hikariConfig.setJdbcUrl("jdbc:mysql://" + mysqlConfig.getHost() + ':' + mysqlConfig.getPort() + '/' + mysqlConfig.getDatabase() + "?useSSL=false");
+		//hikariConfig.setJdbcUrl("jdbc:mysql://" + mysqlConfig.getHost() + ':' + mysqlConfig.getPort() + '/' + mysqlConfig.getBase() + "?useSSL=false");
 		hikariConfig.setUsername(mysqlConfig.getUser());
 		hikariConfig.setPassword(mysqlConfig.getPass());
 		hikariConfig.addDataSourceProperty("cachePrepStmts", "true");

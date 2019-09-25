@@ -13,15 +13,17 @@ repositories {
     maven("https://oss.sonatype.org/content/repositories/snapshots") {
         name = "BungeeCord"
     }
+
+    maven("https://jitpack.io") {
+        name = "Jitpack"
+    }
+    
 }
 
 dependencies {
     compileOnly("net.md-5:bungeecord-api:1.14-SNAPSHOT")
+    implementation("com.github.camdenorrb:JCommons:1.0.2")
     implementation("com.zaxxer:HikariCP:3.4.1")
-    //implementation("com.sxtanna.database:Kuery:+")
-    //implementation("com.sxtanna.database:Core:+")
-    //implementation("org.jetbrains.kotlin:kotlin-stdlib-jre8:1.2.71")
-    //implementation("org.jetbrains.kotlin:kotlin-reflect:1.2.71")
 }
 
 configure<JavaPluginConvention> {

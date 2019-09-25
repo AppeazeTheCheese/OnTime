@@ -53,16 +53,16 @@ public final class OnTimeCmd extends Command implements TabExecutor {
 
 			final TimeModule timeModule = plugin.getTimeModule();
 
-			final long day = timeModule.getPlayTime(target, serverName, TimeModule.Interval.DAY);
-			final long week = timeModule.getPlayTime(target, serverName, TimeModule.Interval.WEEK);
-			final long month = timeModule.getPlayTime(target, serverName, TimeModule.Interval.MONTH);
-			final long all = timeModule.getPlayTime(target, serverName, TimeModule.Interval.ALL);
+			final long day = timeModule.getPlayTime(target, serverName, TimeModule.Timespan.TODAY);
+			final long week = timeModule.getPlayTime(target, serverName, TimeModule.Timespan.THIS_WEEK);
+			final long month = timeModule.getPlayTime(target, serverName, TimeModule.Timespan.THIS_MONTH);
+			final long all = timeModule.getPlayTime(target, serverName, TimeModule.Timespan.ALL);
 
 			sender.sendMessage(
-				new TextComponent(GREEN + "Today: " + YELLOW + day        + '\n'),
-				new TextComponent(GREEN + "This Week: " + YELLOW + week   + '\n'),
+				new TextComponent(GREEN + "Today: "      + YELLOW + day   + '\n'),
+				new TextComponent(GREEN + "This Week: "  + YELLOW + week  + '\n'),
 				new TextComponent(GREEN + "This Month: " + YELLOW + month + '\n'),
-				new TextComponent(GREEN + "All time: " + YELLOW + all)
+				new TextComponent(GREEN + "All time: "   + YELLOW + all)
 			);
 		});
 	}

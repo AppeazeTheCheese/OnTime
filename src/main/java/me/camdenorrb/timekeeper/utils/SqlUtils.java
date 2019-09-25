@@ -1,7 +1,7 @@
 package me.camdenorrb.timekeeper.utils;
 
 import com.zaxxer.hikari.HikariDataSource;
-import me.camdenorrb.timekeeper.base.tryblock.TryCloseBlock;
+import me.camdenorrb.jcommons.base.tryblock.TryCloseBlock;
 
 import java.sql.PreparedStatement;
 
