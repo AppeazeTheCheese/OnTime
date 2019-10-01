@@ -1,9 +1,9 @@
 package me.camdenorrb.timekeeper.module;
 
+import me.camdenorrb.jcommons.base.ModuleBase;
+import me.camdenorrb.jcommons.utils.TryUtils;
 import me.camdenorrb.timekeeper.TimeKeeper;
-import me.camdenorrb.timekeeper.module.base.ModuleBase;
 import me.camdenorrb.timekeeper.utils.SqlUtils;
-import me.camdenorrb.timekeeper.utils.TryUtils;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.event.ServerConnectEvent;
@@ -16,7 +16,6 @@ import java.time.*;
 import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -36,7 +35,6 @@ public final class TimeModule implements ModuleBase, Listener {
 
 
 	private static final String CREATE_SQL = "CREATE TABLE IF NOT EXISTS TimeKeeperPlayers(playerUUID CHAR(36) NOT NULL, playerID INT NOT NULL, serverID INT NOT NULL, serverName VARCHAR(255) NOT NULL, joinTime BIGINT(100) NOT NULL, quitTime BIGINT(100) NOT NULL, FOREIGN KEY (serverID))";
-	private static final String CREATE_SQL = "CREATE TABLE IF NOT EXISTS TimeKeeperSessions(playerUUID CHAR(36) NOT NULL, playerID INT NOT NULL, serverID INT NOT NULL, serverName VARCHAR(255) NOT NULL, joinTime BIGINT(100) NOT NULL, quitTime BIGINT(100) NOT NULL, FOREIGN KEY (serverID))";
 	private static final String INSERT_SQL = "INSERT INTO Session (playerUUID, serverName, joinTime, quitTime) VALUES (?, ?, ?, ?)";
 	private static final String SELECT_SQL = "SELECT joinTime, quitTime FROM Session WHERE playerUUID=? AND serverName=? AND quitTime > ?";
 

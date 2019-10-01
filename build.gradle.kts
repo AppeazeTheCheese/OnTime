@@ -22,7 +22,7 @@ repositories {
 
 dependencies {
     compileOnly("net.md-5:bungeecord-api:1.14-SNAPSHOT")
-    implementation("com.github.camdenorrb:JCommons:1.0.2")
+    implementation("com.github.camdenorrb:JCommons:1.0.3")
     implementation("com.zaxxer:HikariCP:3.4.1")
 }
 
