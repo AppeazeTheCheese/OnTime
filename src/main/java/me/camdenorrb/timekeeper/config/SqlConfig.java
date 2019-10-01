@@ -1,7 +1,7 @@
-package me.camdenorrb.timekeeper.db.sql.impl;
+package me.camdenorrb.timekeeper.config;
 
 import com.google.gson.Gson;
-import me.camdenorrb.timekeeper.utils.GsonUtils;
+import me.camdenorrb.jcommons.utils.GsonUtils;
 
 import java.io.File;
 

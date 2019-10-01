@@ -1,4 +1,4 @@
-package me.camdenorrb.timekeeper.module;
+package me.camdenorrb.timekeeper.modules;
 
 import me.camdenorrb.jcommons.base.ModuleBase;
 import me.camdenorrb.jcommons.utils.TryUtils;
@@ -12,10 +12,12 @@ import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
 import java.sql.PreparedStatement;
-import java.time.*;
-import java.time.temporal.ChronoField;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -34,9 +36,10 @@ public final class TimeModule implements ModuleBase, Listener {
 	private final Map<UUID, Map<String, Long>> serverJoinTime = new HashMap<>();
 
 
-	private static final String CREATE_SQL = "CREATE TABLE IF NOT EXISTS TimeKeeperPlayers(playerUUID CHAR(36) NOT NULL, playerID INT NOT NULL, serverID INT NOT NULL, serverName VARCHAR(255) NOT NULL, joinTime BIGINT(100) NOT NULL, quitTime BIGINT(100) NOT NULL, FOREIGN KEY (serverID))";
-	private static final String INSERT_SQL = "INSERT INTO Session (playerUUID, serverName, joinTime, quitTime) VALUES (?, ?, ?, ?)";
-	private static final String SELECT_SQL = "SELECT joinTime, quitTime FROM Session WHERE playerUUID=? AND serverName=? AND quitTime > ?";
+	// Could use Foreign keys to reduce this a shit ton, UUIDS and ServerNames
+	private static final String CREATE_SQL = "CREATE TABLE IF NOT EXISTS TimeKeeperSessions(playerUUID CHAR(36) NOT NULL, serverName VARCHAR(255) NOT NULL, joinTime BIGINT(100) NOT NULL, quitTime BIGINT(100) NOT NULL)";
+	private static final String INSERT_SQL = "INSERT INTO TimeKeeperSessions(playerUUID, serverName, joinTime, quitTime) VALUES (?, ?, ?, ?)";
+	private static final String SELECT_SQL = "SELECT joinTime, quitTime FROM TimeKeeperSessions WHERE playerUUID=? AND serverName=? AND quitTime > ?";
 
 
 	public TimeModule(final TimeKeeper plugin) {
@@ -89,7 +92,12 @@ public final class TimeModule implements ModuleBase, Listener {
 	public void onBungeeQuit(final PlayerDisconnectEvent event) {
 
 		final UUID uuid = event.getPlayer().getUniqueId();
-		final long joinTime = serverJoinTime.get(event.getPlayer().getUniqueId()).get("Bungee");
+		final Map<String, Long> joinTimes = serverJoinTime.get(uuid);
+		final long joinTime = joinTimes.remove("Bungee");
+
+		if (joinTimes.isEmpty()) {
+			serverJoinTime.remove(uuid);
+		}
 
 		SqlUtils.useStatement(plugin.getHikariDataSource(), INSERT_SQL, (statement) -> {
 
@@ -117,7 +125,12 @@ public final class TimeModule implements ModuleBase, Listener {
 
 		final UUID uuid = event.getPlayer().getUniqueId();
 		final String serverName = event.getTarget().getName();
-		final long joinTime = serverJoinTime.get(event.getPlayer().getUniqueId()).get("Bungee");
+		final Map<String, Long> joinTimes = serverJoinTime.get(uuid);
+		final long joinTime = joinTimes.remove(serverName);
+
+		if (joinTimes.isEmpty()) {
+			serverJoinTime.remove(uuid);
+		}
 
 		SqlUtils.useStatement(plugin.getHikariDataSource(), INSERT_SQL, (statement) -> {
 
@@ -152,7 +165,14 @@ public final class TimeModule implements ModuleBase, Listener {
 			});
 		});
 
-		return TimeUnit.MILLISECONDS.toHours(onlineTime.get());
+
+		final Long joinTime = serverJoinTime.computeIfAbsent(targetUUID, (it) -> new HashMap<>()).get(serverName);
+
+		if (joinTime != null) {
+			onlineTime.getAndAdd(System.currentTimeMillis() - joinTime);
+		}
+
+		return onlineTime.get();
 	}
 
 
@@ -175,7 +195,7 @@ public final class TimeModule implements ModuleBase, Listener {
 	public enum Timespan {
 
 		TODAY(() -> {
-			return LocalDate.now().atStartOfDay().getLong(ChronoField.MICRO_OF_DAY);
+			return LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC);
 		}),
 
 		THIS_WEEK(() -> {
@@ -183,7 +203,7 @@ public final class TimeModule implements ModuleBase, Listener {
 			final LocalDate localDate = LocalDate.now();
 			final LocalDateTime today = localDate.atStartOfDay();
 
-			return today.minusDays(localDate.getDayOfWeek().getValue() - 1).getLong(ChronoField.MICRO_OF_DAY);
+			return today.minusDays(localDate.getDayOfWeek().getValue() - 1).toEpochSecond(ZoneOffset.UTC);
 		}),
 
 		THIS_MONTH(() -> {
@@ -191,7 +211,7 @@ public final class TimeModule implements ModuleBase, Listener {
 			final LocalDate localDate = LocalDate.now();
 			final LocalDateTime today = localDate.atStartOfDay();
 
-			return today.minusDays(localDate.getDayOfMonth() - 1).getLong(ChronoField.MICRO_OF_DAY);
+			return today.minusDays(localDate.getDayOfMonth() - 1).toEpochSecond(ZoneOffset.UTC);
 		}),
 
 		ALL(System::currentTimeMillis);
@@ -211,6 +231,8 @@ public final class TimeModule implements ModuleBase, Listener {
 
 	}
 
+
+	/*
 	public final class Session {
 
 		private final UUID playerUUID;
@@ -244,6 +266,6 @@ public final class TimeModule implements ModuleBase, Listener {
 			return quitTime;
 		}
 
-	}
+	}*/
 
 }

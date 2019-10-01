@@ -1,7 +1,7 @@
-package me.camdenorrb.timekeeper.module;
+package me.camdenorrb.timekeeper.modules;
 
+import me.camdenorrb.jcommons.base.ModuleBase;
 import me.camdenorrb.timekeeper.TimeKeeper;
-import me.camdenorrb.timekeeper.module.base.ModuleBase;
 import me.camdenorrb.timekeeper.utils.SqlUtils;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PostLoginEvent;
@@ -12,7 +12,7 @@ import java.sql.PreparedStatement;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static me.camdenorrb.timekeeper.utils.TryUtils.*;
+import static me.camdenorrb.jcommons.utils.TryUtils.attemptOrPrintErr;
 
 
 public final class NameModule implements ModuleBase, Listener {

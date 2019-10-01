@@ -1,7 +1,7 @@
 package me.camdenorrb.timekeeper.commands;
 
 import me.camdenorrb.timekeeper.TimeKeeper;
-import me.camdenorrb.timekeeper.module.TimeModule;
+import me.camdenorrb.timekeeper.modules.TimeModule;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -59,10 +59,11 @@ public final class OnTimeCmd extends Command implements TabExecutor {
 			final long all = timeModule.getPlayTime(target, serverName, TimeModule.Timespan.ALL);
 
 			sender.sendMessage(
-				new TextComponent(GREEN + "Today: "      + YELLOW + day   + '\n'),
-				new TextComponent(GREEN + "This Week: "  + YELLOW + week  + '\n'),
-				new TextComponent(GREEN + "This Month: " + YELLOW + month + '\n'),
-				new TextComponent(GREEN + "All time: "   + YELLOW + all)
+				new TextComponent("\n"),
+				new TextComponent(GREEN + "Today: "      + YELLOW + formatMillis(day)   + '\n'),
+				new TextComponent(GREEN + "This Week: "  + YELLOW + formatMillis(week)  + '\n'),
+				new TextComponent(GREEN + "This Month: " + YELLOW + formatMillis(month) + '\n'),
+				new TextComponent(GREEN + "All time: "   + YELLOW + formatMillis(all))
 			);
 		});
 	}
@@ -80,4 +81,16 @@ public final class OnTimeCmd extends Command implements TabExecutor {
 			default: return new ArrayList<>();
 		}
 	}
+
+
+	private String formatMillis(final long millis) {
+
+		long seconds = (millis / 1000) % 60;
+		long minutes = (millis / 60000) % 60;
+		long hours   = (millis / 3600000) % 24;
+		long days    = (millis / 86400000) % 24;
+
+		return days + " days, " + hours + " hours, " + minutes + " mins and " + seconds + " seconds.";
+	}
+
 }

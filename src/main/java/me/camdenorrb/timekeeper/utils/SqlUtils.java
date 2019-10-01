@@ -5,7 +5,7 @@ import me.camdenorrb.jcommons.base.tryblock.TryCloseBlock;
 
 import java.sql.PreparedStatement;
 
-import static me.camdenorrb.timekeeper.utils.TryUtils.attemptOrPrintErr;
+import static me.camdenorrb.jcommons.utils.TryUtils.attemptOrPrintErr;
 
 
 public final class SqlUtils {
