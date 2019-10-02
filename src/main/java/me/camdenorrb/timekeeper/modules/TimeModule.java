@@ -194,16 +194,14 @@ public final class TimeModule implements ModuleBase, Listener {
 	// All time = All this combined
 	public enum Timespan {
 
-		TODAY(() -> {
-			return LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC);
-		}),
+		TODAY(() -> LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000),
 
 		THIS_WEEK(() -> {
 
 			final LocalDate localDate = LocalDate.now();
 			final LocalDateTime today = localDate.atStartOfDay();
 
-			return today.minusDays(localDate.getDayOfWeek().getValue() - 1).toEpochSecond(ZoneOffset.UTC);
+			return today.minusDays(localDate.getDayOfWeek().getValue() - 1).toEpochSecond(ZoneOffset.UTC) * 1000;
 		}),
 
 		THIS_MONTH(() -> {
@@ -211,10 +209,10 @@ public final class TimeModule implements ModuleBase, Listener {
 			final LocalDate localDate = LocalDate.now();
 			final LocalDateTime today = localDate.atStartOfDay();
 
-			return today.minusDays(localDate.getDayOfMonth() - 1).toEpochSecond(ZoneOffset.UTC);
+			return today.minusDays(localDate.getDayOfMonth() - 1).toEpochSecond(ZoneOffset.UTC) * 1000;
 		}),
 
-		ALL(System::currentTimeMillis);
+		ALL(() -> 0L);
 
 
 		private final Supplier<Long> milli;
@@ -226,9 +224,8 @@ public final class TimeModule implements ModuleBase, Listener {
 
 
 		public long getStartEpoch() {
-			return System.currentTimeMillis() - milli.get();
+			return milli.get();
 		}
-
 	}
 
 
