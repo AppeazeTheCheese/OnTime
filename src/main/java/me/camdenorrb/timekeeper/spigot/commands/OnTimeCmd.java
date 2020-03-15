@@ -19,7 +19,7 @@ public final class OnTimeCmd implements TabExecutor {
 
 	private final TimeKeeperSpigot plugin;
 
-	private static final String usage = GOLD + "/onTime <Target>";
+	private static final String usage = GREEN + "/onTime <Target>";
 
 
 	public OnTimeCmd(final TimeKeeperSpigot plugin) {
@@ -31,7 +31,7 @@ public final class OnTimeCmd implements TabExecutor {
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
 		if (args.length == 0) {
-			sender.sendMessage(AQUA + "Please enter a target - " + usage);
+			sender.sendMessage(RED + "Please enter a target - " + usage);
 			return true;
 		}
 
@@ -39,7 +39,7 @@ public final class OnTimeCmd implements TabExecutor {
 		final String serverName = plugin.getServer().getName();
 
 		if (target == null) {
-			sender.sendMessage(AQUA + "Please enter an existing target name - " + usage);
+			sender.sendMessage(RED + "Please enter an existing target name - " + usage);
 			return true;
 		}
 

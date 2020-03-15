@@ -19,7 +19,7 @@ public final class OnTimeCmd extends Command implements TabExecutor {
 
 	private final TimeKeeperBungee plugin;
 
-	private static final TextComponent usage = new TextComponent(GOLD + "/onTime <Target> (Server)");
+	private static final TextComponent usage = new TextComponent(GREEN + "/onTime <Target> (Server)");
 
 
 	public OnTimeCmd(final TimeKeeperBungee plugin) {
@@ -31,7 +31,7 @@ public final class OnTimeCmd extends Command implements TabExecutor {
 	@Override
 	public void execute(CommandSender sender, String[] args) {
 		if (args.length == 0) {
-			sender.sendMessage(AQUA + "Please enter a target - " + usage);
+			sender.sendMessage(RED + "Please enter a target - " + usage);
 			return;
 		}
 
@@ -39,12 +39,12 @@ public final class OnTimeCmd extends Command implements TabExecutor {
 		final String serverName = args.length > 1 ? args[1] : "Bungee";
 
 		if (target == null) {
-			sender.sendMessage(AQUA + "Please enter an existing target name - " + usage);
+			sender.sendMessage(RED + "Please enter an existing target name - " + usage);
 			return;
 		}
 
 		if (!serverName.equals("Bungee") && plugin.getProxy().getServerInfo(serverName) == null) {
-			sender.sendMessage(AQUA + "Please enter a valid server name - " + usage);
+			sender.sendMessage(RED + "Please enter a valid server name - " + usage);
 			return;
 		}
 
