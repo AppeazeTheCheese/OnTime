@@ -4,18 +4,19 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import me.camdenorrb.timekeeper.commands.OnTimeCmd;
 import me.camdenorrb.timekeeper.config.SqlConfig;
-import me.camdenorrb.timekeeper.modules.NameModule;
-import me.camdenorrb.timekeeper.modules.TimeModule;
-import net.md_5.bungee.api.plugin.Plugin;
+import me.camdenorrb.timekeeper.spigot.commands.OnTimeCmd;
+import me.camdenorrb.timekeeper.spigot.modules.NameModule;
+import me.camdenorrb.timekeeper.spigot.modules.TimeModule;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 
-public final class TimeKeeper extends Plugin {
+public final class TimeKeeperSpigot extends JavaPlugin {
 
 	private HikariDataSource hikariDataSource;
 
@@ -54,7 +55,9 @@ public final class TimeKeeper extends Plugin {
 		nameModule.enable();
 		timeModule.enable();
 
-		getProxy().getPluginManager().registerCommand(this, new OnTimeCmd(this));
+		final OnTimeCmd onTimeCmd = new OnTimeCmd(this);
+		Objects.requireNonNull(getCommand("ontime")).setExecutor(onTimeCmd);
+		Objects.requireNonNull(getCommand("ontime")).setTabCompleter(onTimeCmd);
 	}
 
 	@Override

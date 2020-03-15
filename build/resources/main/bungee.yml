@@ -1,4 +1,4 @@
-name: TimeKeeper
+name: OnTime
 version: Kat1.0.0
 author: MrKitty_Cat
-main: me.camdenorrb.timekeeper.TimeKeeper
+main: me.camdenorrb.timekeeper.TimeKeeperBungee

@@ -1,14 +1,14 @@
-package me.camdenorrb.timekeeper.commands;
+package me.camdenorrb.timekeeper.bungee.commands;
 
-import me.camdenorrb.timekeeper.TimeKeeper;
-import me.camdenorrb.timekeeper.modules.TimeModule;
+import me.camdenorrb.timekeeper.TimeKeeperBungee;
+import me.camdenorrb.timekeeper.bungee.modules.TimeModule;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
 import net.md_5.bungee.api.plugin.TabExecutor;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -17,12 +17,12 @@ import static net.md_5.bungee.api.ChatColor.*;
 
 public final class OnTimeCmd extends Command implements TabExecutor {
 
-	private final TimeKeeper plugin;
+	private final TimeKeeperBungee plugin;
 
 	private static final TextComponent usage = new TextComponent(GOLD + "/onTime <Target> (Server)");
 
 
-	public OnTimeCmd(final TimeKeeper plugin) {
+	public OnTimeCmd(final TimeKeeperBungee plugin) {
 		super("ontime", "timekeeper.ontime");
 		this.plugin = plugin;
 	}
@@ -30,9 +30,8 @@ public final class OnTimeCmd extends Command implements TabExecutor {
 
 	@Override
 	public void execute(CommandSender sender, String[] args) {
-
 		if (args.length == 0) {
-			sender.sendMessage(new TextComponent(AQUA + "Please enter a target - "), usage);
+			sender.sendMessage(AQUA + "Please enter a target - " + usage);
 			return;
 		}
 
@@ -40,12 +39,12 @@ public final class OnTimeCmd extends Command implements TabExecutor {
 		final String serverName = args.length > 1 ? args[1] : "Bungee";
 
 		if (target == null) {
-			sender.sendMessage(new TextComponent(AQUA + "Please enter an existing target name - "), usage);
+			sender.sendMessage(AQUA + "Please enter an existing target name - " + usage);
 			return;
 		}
 
 		if (!serverName.equals("Bungee") && plugin.getProxy().getServerInfo(serverName) == null) {
-			sender.sendMessage(new TextComponent(AQUA + "Please enter a valid server name - "), usage);
+			sender.sendMessage(AQUA + "Please enter a valid server name - " + usage);
 			return;
 		}
 
@@ -68,9 +67,9 @@ public final class OnTimeCmd extends Command implements TabExecutor {
 		});
 	}
 
+
 	@Override
 	public Iterable<String> onTabComplete(CommandSender sender, String[] args) {
-
 		switch (args.length) {
 
 			case 1:
@@ -78,7 +77,8 @@ public final class OnTimeCmd extends Command implements TabExecutor {
 			case 2:
 				return plugin.getProxy().getServers().keySet();
 
-			default: return new ArrayList<>();
+			default:
+				return Collections.emptyList();
 		}
 	}
 

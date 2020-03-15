@@ -1,15 +1,14 @@
-package me.camdenorrb.timekeeper.modules;
+package me.camdenorrb.timekeeper.spigot.modules;
 
 import me.camdenorrb.jcommons.base.ModuleBase;
 import me.camdenorrb.jcommons.utils.TryUtils;
-import me.camdenorrb.timekeeper.TimeKeeper;
+import me.camdenorrb.timekeeper.TimeKeeperSpigot;
 import me.camdenorrb.timekeeper.utils.SqlUtils;
-import net.md_5.bungee.api.event.PlayerDisconnectEvent;
-import net.md_5.bungee.api.event.PostLoginEvent;
-import net.md_5.bungee.api.event.ServerConnectEvent;
-import net.md_5.bungee.api.event.ServerDisconnectEvent;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.event.EventHandler;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.sql.PreparedStatement;
 import java.time.LocalDate;
@@ -29,7 +28,7 @@ public final class TimeModule implements ModuleBase, Listener {
 
 	private boolean isEnabled;
 
-	private final TimeKeeper plugin;
+	private final TimeKeeperSpigot plugin;
 
 	// UUID -> (Server Name -> Join Time in milliseconds)
 	// "Bungee" will be the server name for when they join Bungee
@@ -42,7 +41,7 @@ public final class TimeModule implements ModuleBase, Listener {
 	private static final String SELECT_SQL = "SELECT joinTime, quitTime FROM TimeKeeperSessions WHERE playerUUID=? AND serverName=? AND quitTime > ?";
 
 
-	public TimeModule(final TimeKeeper plugin) {
+	public TimeModule(final TimeKeeperSpigot plugin) {
 		this.plugin = plugin;
 	}
 
@@ -53,7 +52,7 @@ public final class TimeModule implements ModuleBase, Listener {
 		assert !isEnabled;
 
 		SqlUtils.useStatement(plugin.getHikariDataSource(), CREATE_SQL, PreparedStatement::execute);
-		plugin.getProxy().getPluginManager().registerListener(plugin, this);
+		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 
 		isEnabled = true;
 	}
@@ -65,7 +64,7 @@ public final class TimeModule implements ModuleBase, Listener {
 
 		saveTimeData();
 		serverJoinTime.clear();
-		plugin.getProxy().getPluginManager().unregisterListener(this);
+		HandlerList.unregisterAll(this);
 
 		isEnabled = false;
 	}
@@ -79,21 +78,21 @@ public final class TimeModule implements ModuleBase, Listener {
 
 
 	@EventHandler
-	public void onBungeeJoin(final PostLoginEvent event) {
+	public void onJoin(final PlayerLoginEvent event) {
 
 		final UUID uuid = event.getPlayer().getUniqueId();
 
 		serverJoinTime
 			.computeIfAbsent(uuid, (it) -> new HashMap<>())
-			.put("Bungee", System.currentTimeMillis());
+			.put(plugin.getServer().getName(), System.currentTimeMillis());
 	}
 
 	@EventHandler
-	public void onBungeeQuit(final PlayerDisconnectEvent event) {
+	public void onQuit(final PlayerQuitEvent event) {
 
 		final UUID uuid = event.getPlayer().getUniqueId();
 		final Map<String, Long> joinTimes = serverJoinTime.get(uuid);
-		final long joinTime = joinTimes.remove("Bungee");
+		final long joinTime = joinTimes.remove(plugin.getServer().getName());
 
 		if (joinTimes.isEmpty()) {
 			serverJoinTime.remove(uuid);
@@ -102,7 +101,7 @@ public final class TimeModule implements ModuleBase, Listener {
 		SqlUtils.useStatement(plugin.getHikariDataSource(), INSERT_SQL, (statement) -> {
 
 			statement.setString(1, uuid.toString());
-			statement.setString(2, "Bungee");
+			statement.setString(2, plugin.getServer().getName());
 			statement.setLong(3, joinTime);
 			statement.setLong(4, System.currentTimeMillis());
 
@@ -110,38 +109,6 @@ public final class TimeModule implements ModuleBase, Listener {
 		});
 	}
 
-	@EventHandler
-	public void onServerJoin(final ServerConnectEvent event) {
-
-		final UUID uuid = event.getPlayer().getUniqueId();
-
-		serverJoinTime
-			.computeIfAbsent(uuid, (it) -> new HashMap<>())
-			.put(event.getTarget().getName(), System.currentTimeMillis());
-	}
-
-	@EventHandler
-	public void onServerQuit(final ServerDisconnectEvent event) {
-
-		final UUID uuid = event.getPlayer().getUniqueId();
-		final String serverName = event.getTarget().getName();
-		final Map<String, Long> joinTimes = serverJoinTime.get(uuid);
-		final long joinTime = joinTimes.remove(serverName);
-
-		if (joinTimes.isEmpty()) {
-			serverJoinTime.remove(uuid);
-		}
-
-		SqlUtils.useStatement(plugin.getHikariDataSource(), INSERT_SQL, (statement) -> {
-
-			statement.setString(1, uuid.toString());
-			statement.setString(2, serverName);
-			statement.setLong(3, joinTime);
-			statement.setLong(4, System.currentTimeMillis());
-
-			statement.execute();
-		});
-	}
 
 	// Should call from another thread
 	public long getPlayTime(final UUID targetUUID, final String serverName, final Timespan timespan) {
@@ -201,7 +168,9 @@ public final class TimeModule implements ModuleBase, Listener {
 			final LocalDate localDate = LocalDate.now();
 			final LocalDateTime today = localDate.atStartOfDay();
 
-			return today.minusDays(localDate.getDayOfWeek().getValue() - 1).toEpochSecond(ZoneOffset.UTC) * 1000;
+			final long startOfMonth = today.minusDays(localDate.getDayOfMonth() - 1).toEpochSecond(ZoneOffset.UTC) * 1000;
+
+			return Long.max(today.minusDays(localDate.getDayOfWeek().getValue() - 1).toEpochSecond(ZoneOffset.UTC) * 1000, startOfMonth);
 		}),
 
 		THIS_MONTH(() -> {

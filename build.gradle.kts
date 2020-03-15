@@ -10,6 +10,10 @@ repositories {
 
     mavenCentral()
 
+    maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") {
+        name = "Spigot"
+    }
+
     maven("https://oss.sonatype.org/content/repositories/snapshots") {
         name = "BungeeCord"
     }
@@ -17,11 +21,11 @@ repositories {
     maven("https://jitpack.io") {
         name = "Jitpack"
     }
-    
 }
 
 dependencies {
-    compileOnly("net.md-5:bungeecord-api:1.14-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.15.2-R0.1-SNAPSHOT")
+    compileOnly("net.md-5:bungeecord-api:1.15-SNAPSHOT")
     implementation("com.github.camdenorrb:JCommons:1.0.3")
     implementation("com.zaxxer:HikariCP:3.4.1")
 }

@@ -1,7 +1,7 @@
-package me.camdenorrb.timekeeper.modules;
+package me.camdenorrb.timekeeper.bungee.modules;
 
 import me.camdenorrb.jcommons.base.ModuleBase;
-import me.camdenorrb.timekeeper.TimeKeeper;
+import me.camdenorrb.timekeeper.TimeKeeperBungee;
 import me.camdenorrb.timekeeper.utils.SqlUtils;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PostLoginEvent;
@@ -19,7 +19,7 @@ public final class NameModule implements ModuleBase, Listener {
 
 	private boolean isEnabled;
 
-	private final TimeKeeper plugin;
+	private final TimeKeeperBungee plugin;
 
 
 	private static final String CREATE_SQL = "CREATE TABLE IF NOT EXISTS UUIDForName (uuid CHAR(36) PRIMARY KEY NOT NULL, name VARCHAR(255) NOT NULL)";
@@ -27,7 +27,7 @@ public final class NameModule implements ModuleBase, Listener {
 	private static final String SELECT_SQL = "SELECT * FROM UUIDForName WHERE name=?";
 
 
-	public NameModule(TimeKeeper plugin) {
+	public NameModule(final TimeKeeperBungee plugin) {
 		this.plugin = plugin;
 	}
 
