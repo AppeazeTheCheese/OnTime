@@ -1,13 +1,14 @@
-package me.camdenorrb.timekeeper;
+package me.camdenorrb.ontime;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import me.camdenorrb.timekeeper.bungee.commands.OnTimeCmd;
-import me.camdenorrb.timekeeper.bungee.modules.NameModule;
-import me.camdenorrb.timekeeper.bungee.modules.TimeModule;
-import me.camdenorrb.timekeeper.config.SqlConfig;
+import me.camdenorrb.ontime.bungee.commands.OnTimeCmd;
+import me.camdenorrb.ontime.bungee.commands.OnTimeTopCmd;
+import me.camdenorrb.ontime.bungee.modules.NameModule;
+import me.camdenorrb.ontime.bungee.modules.TimeModule;
+import me.camdenorrb.ontime.config.SqlConfig;
 import net.md_5.bungee.api.plugin.Plugin;
 
 import java.io.File;
@@ -15,7 +16,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 
-public final class TimeKeeperBungee extends Plugin {
+public final class OnTimeBungee extends Plugin {
 
 	private HikariDataSource hikariDataSource;
 
@@ -55,6 +56,7 @@ public final class TimeKeeperBungee extends Plugin {
 		timeModule.enable();
 
 		getProxy().getPluginManager().registerCommand(this, new OnTimeCmd(this));
+		getProxy().getPluginManager().registerCommand(this, new OnTimeTopCmd(this));
 	}
 
 	@Override

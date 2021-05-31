@@ -1,9 +1,9 @@
-package me.camdenorrb.timekeeper.spigot.modules;
+package me.camdenorrb.ontime.spigot.modules;
 
 import me.camdenorrb.jcommons.base.ModuleBase;
 import me.camdenorrb.jcommons.utils.TryUtils;
-import me.camdenorrb.timekeeper.TimeKeeperSpigot;
-import me.camdenorrb.timekeeper.utils.SqlUtils;
+import me.camdenorrb.ontime.OnTimeSpigot;
+import me.camdenorrb.ontime.utils.SqlUtils;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
@@ -15,9 +15,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 
@@ -28,7 +30,7 @@ public final class TimeModule implements ModuleBase, Listener {
 
 	private boolean isEnabled;
 
-	private final TimeKeeperSpigot plugin;
+	private final OnTimeSpigot plugin;
 
 	// UUID -> (Server Name -> Join Time in milliseconds)
 	// "Bungee" will be the server name for when they join Bungee
@@ -36,12 +38,16 @@ public final class TimeModule implements ModuleBase, Listener {
 
 
 	// Could use Foreign keys to reduce this a shit ton, UUIDS and ServerNames
-	private static final String CREATE_SQL = "CREATE TABLE IF NOT EXISTS TimeKeeperSessions(playerUUID CHAR(36) NOT NULL, serverName VARCHAR(255) NOT NULL, joinTime BIGINT(100) NOT NULL, quitTime BIGINT(100) NOT NULL)";
-	private static final String INSERT_SQL = "INSERT INTO TimeKeeperSessions(playerUUID, serverName, joinTime, quitTime) VALUES (?, ?, ?, ?)";
-	private static final String SELECT_SQL = "SELECT joinTime, quitTime FROM TimeKeeperSessions WHERE playerUUID=? AND serverName=? AND quitTime > ?";
+	private static final String CREATE_SQL = "CREATE TABLE IF NOT EXISTS OnTimeSessions(playerUUID CHAR(36) NOT NULL, serverName VARCHAR(255) NOT NULL, joinTime BIGINT(100) NOT NULL, quitTime BIGINT(100) NOT NULL)";
+	private static final String INSERT_SQL = "INSERT INTO OnTimeSessions(playerUUID, serverName, joinTime, quitTime) VALUES (?, ?, ?, ?)";
+	private static final String SET_ROWNUM = "SET @rownum := 0";
+	private static final String SELECT_SQL = "SELECT joinTime, quitTime FROM OnTimeSessions WHERE playerUUID=? AND serverName=? AND quitTime > ?";
+	private static final String SELECT_TOP_SQL = "SELECT playerUUID, SUM(quitTime-joinTime) timeOn FROM OnTimeSessions WHERE serverName=? GROUP BY playerUUID ORDER BY timeOn DESC LIMIT ? OFFSET ?";
+	private static final String SELECT_DISTINCT_COUNT_SQL = "SELECT count(distinct playerUUID) FROM OnTimeSessions";
+	private static final String SELECT_PLAYER_RANK = "SELECT rank FROM (SELECT *, @rownum := @rownum + 1 as rank FROM (SELECT playerUUID, SUM(quitTime-joinTime) timeOn FROM OnTimeSessions WHERE serverName=? GROUP BY playerUUID ORDER BY timeOn DESC) d) f WHERE playerUUID=?;";
 
 
-	public TimeModule(final TimeKeeperSpigot plugin) {
+	public TimeModule(final OnTimeSpigot plugin) {
 		this.plugin = plugin;
 	}
 
@@ -109,6 +115,60 @@ public final class TimeModule implements ModuleBase, Listener {
 		});
 	}
 
+	public LinkedHashMap<UUID, Long> getTopPlayers(final int playersToGet, final int offset, final String ServerName){
+		final AtomicReference<LinkedHashMap<UUID, Long>> ret = new AtomicReference<>(new LinkedHashMap<>());
+
+		SqlUtils.useStatement(plugin.getHikariDataSource(), SELECT_TOP_SQL, (statement) -> {
+
+			statement.setString(1, ServerName);
+			statement.setInt(2, playersToGet);
+			statement.setInt(3, offset);
+
+			TryUtils.attemptOrPrintErr(statement::executeQuery, (resultSet) -> {
+				while (resultSet.next()) {
+					final UUID playerId = UUID.fromString(resultSet.getString(1));
+					final long time = resultSet.getLong(2);
+
+					ret.get().put(playerId, time);
+				}
+			});
+		});
+
+		return ret.get();
+	}
+
+	public long getDistinctCount(){
+		final AtomicLong ret = new AtomicLong(0);
+
+		SqlUtils.useStatement(plugin.getHikariDataSource(), SELECT_DISTINCT_COUNT_SQL, (statement) ->{
+			TryUtils.attemptOrPrintErr(statement::executeQuery, (resultSet) -> {
+				resultSet.next();
+				ret.set(resultSet.getLong(1));
+			});
+		});
+
+		return ret.get();
+	}
+
+	public long getOverallRank(final UUID targetUUID, final String serverName){
+		final AtomicLong playerRank = new AtomicLong();
+
+		SqlUtils.useStatement(plugin.getHikariDataSource(), SET_ROWNUM, (statement) -> TryUtils.attemptOrPrintErr(statement::execute));
+		SqlUtils.useStatement(plugin.getHikariDataSource(), SELECT_PLAYER_RANK, (statement) -> {
+
+			statement.setString(1, serverName);
+			statement.setString(2, targetUUID.toString());
+
+			TryUtils.attemptOrPrintErr(statement::executeQuery, (resultSet) -> {
+				while (resultSet.next()) {
+					final long rank = resultSet.getLong(1);
+					playerRank.set(rank);
+				}
+			});
+		});
+
+		return playerRank.get();
+	}
 
 	// Should call from another thread
 	public long getPlayTime(final UUID targetUUID, final String serverName, final Timespan timespan) {
@@ -141,7 +201,6 @@ public final class TimeModule implements ModuleBase, Listener {
 
 		return onlineTime.get();
 	}
-
 
 	private void saveTimeData() {
 		serverJoinTime.forEach((uuid, entries) ->

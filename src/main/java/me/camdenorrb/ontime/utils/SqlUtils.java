@@ -1,4 +1,4 @@
-package me.camdenorrb.timekeeper.utils;
+package me.camdenorrb.ontime.utils;
 
 import com.zaxxer.hikari.HikariDataSource;
 import me.camdenorrb.jcommons.base.tryblock.TryCloseBlock;

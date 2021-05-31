@@ -1,4 +1,4 @@
-package me.camdenorrb.timekeeper.config;
+package me.camdenorrb.ontime.config;
 
 import com.google.gson.Gson;
 import me.camdenorrb.jcommons.utils.GsonUtils;

@@ -1,4 +1,4 @@
-package me.camdenorrb.timekeeper.base;
+package me.camdenorrb.ontime.base;
 
 public interface Connectable {
 

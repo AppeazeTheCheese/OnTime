@@ -1,9 +1,11 @@
 name: OnTime
-version: Kat1.0.0
-author: MrKitty_Cat
-main: me.camdenorrb.timekeeper.TimeKeeperSpigot
+version: 1.0.2
+author: AppeazeTheCheese
+main: me.camdenorrb.ontime.OnTimeSpigot
 
 commands:
 
   ontime:
-    permission: timekeeper.ontime
+    permission: ontime.use
+  ontimetop:
+    permission: ontimetop.use

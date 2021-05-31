@@ -1,8 +1,8 @@
-package me.camdenorrb.timekeeper.spigot.modules;
+package me.camdenorrb.ontime.spigot.modules;
 
 import me.camdenorrb.jcommons.base.ModuleBase;
-import me.camdenorrb.timekeeper.TimeKeeperSpigot;
-import me.camdenorrb.timekeeper.utils.SqlUtils;
+import me.camdenorrb.ontime.OnTimeSpigot;
+import me.camdenorrb.ontime.utils.SqlUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
@@ -20,14 +20,15 @@ public final class NameModule implements ModuleBase, Listener {
 
 	private boolean isEnabled;
 
-	private final TimeKeeperSpigot plugin;
+	private final OnTimeSpigot plugin;
 
 	private static final String CREATE_SQL = "CREATE TABLE IF NOT EXISTS UUIDForName (uuid CHAR(36) PRIMARY KEY NOT NULL, name VARCHAR(255) NOT NULL)";
-	private static final String INSERT_SQL = "INSERT INTO UUIDForName (uuid, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name=name";
-	private static final String SELECT_SQL = "SELECT * FROM UUIDForName WHERE name=?";
+	private static final String INSERT_SQL = "INSERT INTO UUIDForName (uuid, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)";
+	private static final String SELECT_NAME_SQL = "SELECT * FROM UUIDForName WHERE name=?";
+	private static final String SELECT_UUID_SQL = "SELECT * FROM UUIDForName WHERE uuid=?";
 
 
-	public NameModule(TimeKeeperSpigot plugin) {
+	public NameModule(OnTimeSpigot plugin) {
 		this.plugin = plugin;
 	}
 
@@ -85,7 +86,7 @@ public final class NameModule implements ModuleBase, Listener {
 
 		final AtomicReference<UUID> uuid = new AtomicReference<>();
 
-		SqlUtils.useStatement(plugin.getHikariDataSource(), SELECT_SQL, (statement) -> {
+		SqlUtils.useStatement(plugin.getHikariDataSource(), SELECT_NAME_SQL, (statement) -> {
 
 			statement.setString(1, name);
 
@@ -97,6 +98,23 @@ public final class NameModule implements ModuleBase, Listener {
 		});
 
 		return uuid.get();
+	}
+
+	public String getNameForUUID(final UUID id) {
+		AtomicReference<String> name = new AtomicReference<>();
+
+		SqlUtils.useStatement(plugin.getHikariDataSource(), SELECT_UUID_SQL, (statement) -> {
+
+			statement.setString(1, id.toString());
+
+			attemptOrPrintErr(statement::executeQuery, (resultSet) -> {
+				if (resultSet.next()) {
+					name.set(resultSet.getString("name"));
+				}
+			});
+		});
+
+		return name.get();
 	}
 
 

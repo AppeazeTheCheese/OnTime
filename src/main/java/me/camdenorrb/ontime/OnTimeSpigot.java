@@ -1,13 +1,14 @@
-package me.camdenorrb.timekeeper;
+package me.camdenorrb.ontime;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import me.camdenorrb.timekeeper.config.SqlConfig;
-import me.camdenorrb.timekeeper.spigot.commands.OnTimeCmd;
-import me.camdenorrb.timekeeper.spigot.modules.NameModule;
-import me.camdenorrb.timekeeper.spigot.modules.TimeModule;
+import me.camdenorrb.ontime.config.SqlConfig;
+import me.camdenorrb.ontime.spigot.commands.OnTimeCmd;
+import me.camdenorrb.ontime.spigot.commands.OnTimeTopCmd;
+import me.camdenorrb.ontime.spigot.modules.NameModule;
+import me.camdenorrb.ontime.spigot.modules.TimeModule;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -16,7 +17,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 
-public final class TimeKeeperSpigot extends JavaPlugin {
+public final class OnTimeSpigot extends JavaPlugin {
 
 	private HikariDataSource hikariDataSource;
 
@@ -32,12 +33,22 @@ public final class TimeKeeperSpigot extends JavaPlugin {
 
 	@Override
 	public void onLoad() {
-
+		final File googleSheetsConfig = new File(getDataFolder(), "SheetsConfig.json");
 		final SqlConfig mysqlConfig = SqlConfig.fromOrMake(new File(getDataFolder(), "mysqlConfig.json"), gson);
 
 		final HikariConfig hikariConfig = new HikariConfig();
 
 		System.out.println(mysqlConfig.getBase());
+
+		//if(!googleSheetsConfig.exists()){
+		//	boolean success = false;
+		//	try {
+		//		success = googleSheetsConfig.createNewFile();
+		//	} catch (IOException e) { }
+		//	if(!success){
+		//		System.out.println("Failed to create SheetsConfig.json file.");
+		//	}
+		//}
 
 		hikariConfig.setJdbcUrl("jdbc:mysql://" + mysqlConfig.getHost() + ':' + mysqlConfig.getPort() + '/' + mysqlConfig.getBase() + "?useSSL=false");
 		hikariConfig.setUsername(mysqlConfig.getUser());
@@ -56,8 +67,10 @@ public final class TimeKeeperSpigot extends JavaPlugin {
 		timeModule.enable();
 
 		final OnTimeCmd onTimeCmd = new OnTimeCmd(this);
+		final OnTimeTopCmd onTimeTopCmd = new OnTimeTopCmd(this);
 		Objects.requireNonNull(getCommand("ontime")).setExecutor(onTimeCmd);
 		Objects.requireNonNull(getCommand("ontime")).setTabCompleter(onTimeCmd);
+		Objects.requireNonNull(getCommand("ontimetop")).setExecutor(onTimeTopCmd);
 	}
 
 	@Override
